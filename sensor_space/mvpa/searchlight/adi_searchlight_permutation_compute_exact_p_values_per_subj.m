@@ -15,12 +15,12 @@ acc_svm_all_subj = [];
 
 for ii = 1:length(subjectdir)
     
-    if config.timerange(1,1) == 0.09 && exist(['E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\' subjectdir(ii).name filesep config.subfolder '\perf_pseudotrials_equalnum_x2_trainfold_only_' num2str(config.timerange(1)) '_' num2str(config.timerange(2)) 'ms_sample_orig.mat'])
-            load(['E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\' subjectdir(ii).name filesep config.subfolder '\perf_pseudotrials_equalnum_x2_trainfold_only_' num2str(config.timerange(1)) '_' num2str(config.timerange(2)) 'ms_sample_orig.mat'])
-    elseif config.timerange(1,1) == 0.09 && ~exist(['E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\' subjectdir(ii).name filesep config.subfolder '\perf_pseudotrials_equalnum_x2_trainfold_only_' num2str(config.timerange(1)) '_' num2str(config.timerange(2)) 'ms_sample_orig.mat'])
-           load(['E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\' subjectdir(ii).name filesep config.subfolder '\perf_pseudotrials_equalnum_x2_trainfold_only_' num2str(config.timerange(1)) '_' num2str(config.timerange(2)) '_ms.mat'], 'perf')
+    if config.timerange(1,1) == 0.09 && exist(['E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\' subjectdir(ii).name filesep config.subfolder '\perf_pseudotrials_equalnum_x1_trainfold_only_' num2str(config.timerange(1)) '_' num2str(config.timerange(2)) 'ms_sample_orig.mat'])
+            load(['E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\' subjectdir(ii).name filesep config.subfolder '\perf_pseudotrials_equalnum_x1_trainfold_only_' num2str(config.timerange(1)) '_' num2str(config.timerange(2)) 'ms_sample_orig.mat'])
+    elseif config.timerange(1,1) == 0.09 && ~exist(['E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\' subjectdir(ii).name filesep config.subfolder '\perf_pseudotrials_equalnum_x1_trainfold_only_' num2str(config.timerange(1)) '_' num2str(config.timerange(2)) 'ms_sample_orig.mat'])
+           load(['E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\' subjectdir(ii).name filesep config.subfolder '\perf_pseudotrials_equalnum_x1_trainfold_only_' num2str(config.timerange(1)) '_' num2str(config.timerange(2)) '_ms.mat'], 'perf')
     else
-        load(['E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\' subjectdir(ii).name filesep config.subfolder '\perf_pseudotrials_equalnum_x2_trainfold_only_' num2str(config.timerange(1)) '_' num2str(config.timerange(2)) '_ms.mat'], 'perf')
+        load(['E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\' subjectdir(ii).name filesep config.subfolder '\perf_pseudotrials_equalnum_x1_trainfold_only_' num2str(config.timerange(1)) '_' num2str(config.timerange(2)) '_ms.mat'], 'perf')
     end
     accuracy_lda = mean(perf.lda.accuracy,1);
     accuracy_svm = mean(perf.svm.accuracy,1);

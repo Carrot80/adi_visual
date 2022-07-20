@@ -216,7 +216,7 @@ cfg.tail = 0;                    % -1, 1 or 0 (default = 0); one-sided or two-si
 cfg.clustertail = 0;
 cfg.alpha = 0.05;               % alpha level of the permutation test
 cfg.numrandomization = 5000;      % number of draws from the permutation distribution
-
+cfg.correcttail = 'alpha';
 subj = size(grandavg_like_group.individual,1);
 design = zeros(2,2*subj);
 for i = 1:subj
@@ -238,12 +238,16 @@ cfg.latency       = [0.03 0.15];
      % time interval over which the experimental
 
 % cfg.avgovertime = 'yes';                                 % conditions must be compared (in seconds)   
-cfg.avgovertime = 'yes'
+cfg.avgovertime = 'no'
 [stat_comp1] = ft_timelockstatistics(cfg, grandavg_like_group, grandavg_dislike_group);
 cfg.latency       = [0.15 0.56]; 
 [stat_comp2] = ft_timelockstatistics(cfg, grandavg_like_group, grandavg_dislike_group);
 cfg.latency       = [0.56 0.74]; 
 [stat_comp3] = ft_timelockstatistics(cfg, grandavg_like_group, grandavg_dislike_group);
+
+%%
+
+mask = find(sum(stat_comp1.mask, 2))
 
 % stat.posclusters(1)
 % stat.negclusters(1)
@@ -256,7 +260,7 @@ stat_comp3.cfg.alpha = 0.05; % sonst zu konservativ
 % (stat.cfg.alpha is the alpha level we specified earlier for cluster comparisons; In this case, 0.025)
 % make a boolean matrix of which (channel,time)-pairs are part of a significant cluster
 pos_cluster_pvals = [stat_comp1.posclusters(:).prob];
-pos_signif_clust = find(pos_cluster_pvals < stat_comp3.cfg.alpha);
+pos_signif_clust = find(pos_cluster_pvals < stat_comp1.cfg.alpha);
 pos = ismember(stat_comp1.posclusterslabelmat, pos_signif_clust);
 
 
@@ -268,7 +272,7 @@ neg = ismember(stat_comp1.negclusterslabelmat, neg_signif_clust);
 % pos = stat.posclusterslabelmat == 1; % or == 2, or 3, etc.
 % neg = stat.negclusterslabelmat == 1;
 
-timestep = 0.01; % timestep between time windows for each subplot (in seconds)
+timestep = 0.005; % timestep between time windows for each subplot (in seconds)
 sampling_rate = 1017.25; % Data has a temporal resolution of 300 Hz
 sample_count = length(stat_comp1.time);
 % number of temporal samples in the statistics object
@@ -277,8 +281,8 @@ m = [1:timestep*sampling_rate:sample_count+timestep*sampling_rate]; % t
 
 [i1,i2] = match_str(raweffectlike_vs_dislike_comp1.label, stat_comp1.label);
 
-for k = 1:12
-   subplot(4,5,k);
+for k = 1:25
+   subplot(5,5,k);
    cfg = [];
    cfg.xlim = [j(k) j(k+1)];   % time interval of the subplot
 %    cfg.zlim = [-2.5e-13 2.5e-13];
@@ -305,24 +309,103 @@ for k = 1:12
 end
 %% figure comp1:
 
-stat_comp1.cfg.alpha = 0.05; % 0.25 zu konservativ? (1 pro componente)
-pos_cluster_pvals = [stat_comp1.posclusters(:).prob];
-pos_signif_clust = find(pos_cluster_pvals < stat_comp1.cfg.alpha);
-pos = ismember(stat_comp1.posclusterslabelmat, pos_signif_clust);
-neg_cluster_pvals = [stat_comp1.negclusters(:).prob];
-neg_signif_clust = find(neg_cluster_pvals < stat_comp1.cfg.alpha);
-neg = ismember(stat_comp1.negclusterslabelmat, neg_signif_clust);
+
+posclusterslabelmat = stat_comp1.posclusterslabelmat;
+posclusterslabelmat(find(posclusterslabelmat~=1))=0;
+indx_cluster1 = find(posclusterslabelmat==1);
+pos_cluster = find(sum(posclusterslabelmat,2));
+
+negclusterslabelmat = stat_comp1.negclusterslabelmat;
+negclusterslabelmat(find(negclusterslabelmat~=1))=0;
+indx_cluster1 = find(negclusterslabelmat==1);
+neg_cluster = find(sum(negclusterslabelmat,2));
 
 cfg = [];
 cfg.xlim=[0.03 0.15]; 
 % cfg.style     = 'blank';
 cfg.zlim=[-0.12 0.12];
-pos_int = zeros(numel(raweffectlike_vs_dislike_comp1.label),1);
-pos_int(i1) = all(pos(i2, 1), 2);  
-neg_int = zeros(numel(raweffectlike_vs_dislike.label),1);
-neg_int(i1) = all(neg(i2, 1), 2); 
 cfg.highlight = 'on';
-cfg.highlightchannel = [find(pos_int);find(neg)];
+cfg.highlightchannel = [pos_cluster;neg_cluster];
+cfg.comment = 'xlim';
+cfg.commentpos = 'title';
+cfg.layout = '4D248.lay';
+figure;ft_topoplotER(cfg, raweffectlike_vs_dislike); set(gcf,'color','w'); colorbar
+savefig([path2data 'cluster_permutation_test_comp1.fig' ]);
+
+%% comp 2 figure:
+
+mask = find(sum(stat_comp2.mask, 2))
+
+stat_comp2.posclusters(1)
+stat_comp2.negclusters(1)
+
+% Then, find which clusters are significant, outputting their indices as held in stat.posclusters
+% In case you have downloaded and loaded the data, ensure stat.cfg.alpha exist
+% if ~isfield(stat.cfg,'alpha'); stat.cfg.alpha = 0.025; end; % stat.cfg.alpha was moved as the downloaded data was processed by an additional FieldTrip function to anonymize the data.
+stat_comp2.cfg.alpha = 0.05; % sonst zu konservativ
+
+% (stat.cfg.alpha is the alpha level we specified earlier for cluster comparisons; In this case, 0.025)
+% make a boolean matrix of which (channel,time)-pairs are part of a significant cluster
+pos_cluster_pvals = [stat_comp2.posclusters(:).prob];
+pos_signif_clust = find(pos_cluster_pvals < stat_comp2.cfg.alpha);
+pos = ismember(stat_comp2.posclusterslabelmat, pos_signif_clust);
+
+% and now for the negative clusters...
+neg_cluster_pvals = [stat_comp2.negclusters(:).prob];
+neg_signif_clust = find(neg_cluster_pvals < stat_comp2.cfg.alpha);
+neg = ismember(stat_comp2.negclusterslabelmat, neg_signif_clust);
+
+% pos = stat.posclusterslabelmat == 1; % or == 2, or 3, etc.
+% neg = stat.negclusterslabelmat == 1;
+
+timestep = 0.005; % timestep between time windows for each subplot (in seconds)
+sampling_rate = 1017.25; % Data has a temporal resolution of 300 Hz
+sample_count = length(stat_comp2.time);
+% number of temporal samples in the statistics object
+j = [0.15:timestep:0.56]; % Temporal endpoints (in seconds) of the ERP average computed in each subplot
+m = [1:timestep*sampling_rate:sample_count+timestep*sampling_rate]; % t
+
+[i1,i2] = match_str(raweffectlike_vs_dislike_comp2.label, stat_comp2.label);
+
+for k = 1:25
+   subplot(5,5,k);
+   cfg = [];
+   cfg.xlim = [j(k) j(k+1)];   % time interval of the subplot
+%    cfg.zlim = [-2.5e-13 2.5e-13];
+   % If a channel is in a to-be-plotted cluster, then
+   % the element of pos_int with an index equal to that channel
+   % number will be set to 1 (otherwise 0).
+
+   % Next, check which channels are in the clusters over the
+   % entire time interval of interest.
+   pos_int = zeros(numel(raweffectlike_vs_dislike_comp2.label),1);
+   neg_int = zeros(numel(raweffectlike_vs_dislike_comp2.label),1);
+   pos_int(i1) = all(pos(i2, m(k):m(k+1)), 2);
+   neg_int(i1) = all(neg(i2, m(k):m(k+1)), 2);
+
+   cfg.highlight   = 'on';
+   % Get the index of the to-be-highlighted channel
+   cfg.highlightchannel = find(pos_int | neg_int);
+   cfg.comment     = 'xlim';
+   cfg.commentpos  = 'title';
+   cfg.layout      = '4D248.lay';
+   cfg.interactive = 'no';
+   cfg.figure      = 'gca'; % plots in the current axes, here in a subplot
+   ft_topoplotER(cfg, raweffectlike_vs_dislike_comp2);
+end
+
+
+
+
+
+%% 
+cfg = [];
+cfg.xlim=[0.03 0.15]; 
+% cfg.style     = 'blank';
+% cfg.zlim=[-0.12 0.12];
+
+cfg.highlight = 'on';
+cfg.highlightchannel = [mask];
 cfg.comment = 'xlim';
 cfg.commentpos = 'title';
 cfg.layout = '4D248.lay';
@@ -331,12 +414,38 @@ savefig([path2data 'cluster_permutation_test_comp1.fig' ]);
 
 
 
-%% 
-
-
-
-
 %% figure comp2 
+posclusterslabelmat = stat_comp2.posclusterslabelmat;
+indx_cluster4 = find(stat_comp2.posclusterslabelmat==4);
+posclusterslabelmat(indx_cluster4)=0;
+indx_cluster3 = find(stat_comp2.posclusterslabelmat==3);
+posclusterslabelmat(indx_cluster3)=0;
+indx_cluster2 = find(stat_comp2.posclusterslabelmat==2);
+posclusterslabelmat(indx_cluster2)=0;
+pos_cluster = find(sum(posclusterslabelmat,2));
+
+negclusterslabelmat = stat_comp2.negclusterslabelmat;
+negclusterslabelmat(find(negclusterslabelmat~=1))=0;
+indx_cluster1 = find(negclusterslabelmat==1);
+neg_cluster = find(sum(negclusterslabelmat,2));
+
+cfg = [];
+cfg.xlim=[0.15 0.56]; 
+% cfg.style     = 'blank';
+cfg.zlim=[-0.12 0.12];
+cfg.highlight = 'on';
+cfg.highlightchannel = [pos_cluster; neg_cluster];
+cfg.comment = 'xlim';
+cfg.commentpos = 'title';
+cfg.layout = '4D248.lay';
+figure;ft_topoplotER(cfg, raweffectlike_vs_dislike); set(gcf,'color','w'); colorbar
+% savefig([path2data 'cluster_permutation_test_comp2.fig' ]);
+
+sign_chans_cluster_perm_comp2=stat_comp2.label(unique([pos_cluster; neg_cluster]));
+
+%% comp 3: n.s.
+
+%%
 
 stat_comp2.cfg.alpha = 0.025; % da drei tests gerechnet werden (1 pro componente)
 pos_cluster_pvals = [stat_comp2.posclusters(:).prob];

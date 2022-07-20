@@ -230,13 +230,14 @@ config = [];
 config.path2subjects = 'E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\';
 subjects_dir = dir(config.path2subjects);
 subjects_dir(1:2,:) = [];
-config.channelselection = [];
+load('E:\Arbeit\adidas\data_analysis\visual_stimuli\group_analysis\sensor_space\grandavg_all_trials\realignment_per_subject\cluster_permutation_test\sign_chans_clusterperm_nonavg.mat')
+config.channelselection = sign_chans_cluster_perm;
 config.balldesign = {'gbf'; 'gbs'; 'gbv'; 'ggf'; 'ggs'; 'ggv'; 'rwf'; 'rws'; 'rwv'};
-config.time_interval = [-0.5 1];
+config.time_interval = [0.03 0.153];
 rng_ = rng(85720583); % Aussage von Stefan: direkt vor Publikation noch einmal durchrechnen;
 config.rng = rng_;
 config.path2save.mainfolder = 'E:\Arbeit\adidas\data_analysis\visual_stimuli\single_subjects\';
-config.path2save.subfolder = '\MEG\mvpa\realigned_data_per_subject\mvpa_without_channelselection\';
+config.path2save.subfolder = 'MEG\mvpa\realigned_data_per_subject\';
 adi_permutation_leave_out_exemplar_singlsubj(subjects_dir, config)
 
 

@@ -1,17 +1,17 @@
 function [] = adi_leave_out_exemplar_singlsubj(mainpath, subjectdir, filename, balldesign, time_interval, neighbours)
 
 
-for ii = 2:length(subjectdir)
+for ii = 1:length(subjectdir)
     
     
     if ~exist([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\'], 'dir')
         mkdir(([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\']))
     end
-%     if 2 == exist([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\session.mat'], 'file')
+    if 2 == exist([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\session_fsample_orig.mat'], 'file')
         
-%         load ([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\session.mat'])
+        load ([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\session_fsample_orig.mat'])
         
-%     else
+    else
     
         dir_data = dir([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\02_interpolated\' '*.mat']);
         ind_ = [];
@@ -105,7 +105,7 @@ for ii = 2:length(subjectdir)
 %    end
         save (['C:\Users\herfurkn1\Documents\adidas\data_analysis\single_subjects\' subjectdir(ii).name filesep 'MEG_analysis\realigned_data_per_subject\mvpa\session_fsample_orig.mat'], 'session')
         save ([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\session_fsample_orig.mat'], 'session')
-  
+    end
   
     %% MVPA  
     
@@ -125,8 +125,8 @@ for ii = 2:length(subjectdir)
             perf.config.methods = 'perf_without_pca_bootstrap_4pseudotrials_per_condition_trainfold_only';
             perf.config.comment = ' da alle trials mit den uneindeutigen Antworten zur Klassifikation genutzt worden, wurden nur trials aus dem trainfold zur Bildung von Pseudotrials gemittelt; es wurde trialanzahl für like und dislike angeglichen ';
             perf.features = session.label;
-            save([mainpath subjectdir(ii).name filesep filename 'perf_pseudotrials_equalnum_x2_trainfold_only_' num2str(time_interval(1)) '_' num2str(time_interval(2)) 'ms_sample_orig.mat'], 'perf')
-            save(['C:\Users\herfurkn1\Documents\adidas\data_analysis\single_subjects\' subjectdir(ii).name filesep 'MEG_analysis\realigned_data_per_subject\mvpa\searchlight\' 'perf_pseudotrials_equalnum_x2_trainfold_only_' num2str(time_interval(1)) '_' num2str(time_interval(2)) 'ms_sample_orig.mat'], 'perf')
+            save([mainpath subjectdir(ii).name filesep filename 'perf_pseudotrials_equalnum_x1_trainfold_only_' num2str(time_interval(1)) '_' num2str(time_interval(2)) 'ms_sample_orig.mat'], 'perf')
+            save(['C:\Users\herfurkn1\Documents\adidas\data_analysis\single_subjects\' subjectdir(ii).name filesep 'MEG_analysis\realigned_data_per_subject\mvpa\searchlight\' 'perf_pseudotrials_equalnum_x1_trainfold_only_' num2str(time_interval(1)) '_' num2str(time_interval(2)) 'ms_sample_orig.mat'], 'perf')
             if ~exist([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\figures\'], 'dir')
                 mkdir([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\figures\'])
             end
@@ -163,7 +163,7 @@ for ii = 2:length(subjectdir)
                cfg.colorbar     = 'yes';
                cfg.title = ['Searchlight mean all classifiers' perf.lda(ss).time]; 
                figure; ft_topoplotER(cfg, stat); 
-               savefig([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\figures\perf_pseudotrials_equalnum_x2_trainfold_only_' perf.lda(ss).time '_ms_mean_all_classifiers.fig'])
+               savefig([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\figures\perf_pseudotrials_equalnum_x1_trainfold_only_' perf.lda(ss).time '_ms_mean_all_classifiers.fig'])
            end
           close all
                     
@@ -183,7 +183,7 @@ for ii = 2:length(subjectdir)
                cfg.colorbar     = 'yes';
 %                cfg.title = ['Searchlight LDA' perf.lda(ss).time]; 
                figure; ft_topoplotER(cfg, stat); 
-               savefig([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\figures\perf_pseudotrials_equalnum_x2_trainfold_only_' perf.lda(ss).time '_ms_lda.fig'])
+               savefig([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\figures\perf_pseudotrials_equalnum_x1_trainfold_only_' perf.lda(ss).time '_ms_lda.fig'])
            end
            close all
            %% figure result svm:
@@ -203,7 +203,7 @@ for ii = 2:length(subjectdir)
                cfg.colorbar     = 'yes';
                cfg.title = ['Searchlight svm' perf.svm(ss).time]; 
                figure; ft_topoplotER(cfg, stat); 
-               savefig([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\figures\perf_pseudotrials_equalnum_x2_trainfold_only_' perf.svm(ss).time '_ms_svm.fig'])
+               savefig([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\figures\perf_pseudotrials_equalnum_x1_trainfold_only_' perf.svm(ss).time '_ms_svm.fig'])
            end
            close all
 
@@ -224,7 +224,7 @@ for ii = 2:length(subjectdir)
                cfg.colorbar     = 'yes';
                cfg.title = ['Searchlight logreg' perf.logreg(ss).time]; 
                figure; ft_topoplotER(cfg, stat); 
-               savefig([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\figures\perf_pseudotrials_equalnum_x2_trainfold_only_' perf.svm(ss).time '_ms_logreg.fig'])
+               savefig([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\figures\perf_pseudotrials_equalnum_x1_trainfold_only_' perf.svm(ss).time '_ms_logreg.fig'])
            end
            close all
  
@@ -330,7 +330,7 @@ for kk = 1:length(CV)
     cfg = [];
     cfg.mode = 'bootstrap';
     cfg.averages = 4;
-    cfg.repetitions = max_numel_trials*2;
+    cfg.repetitions = max_numel_trials*1;
     bootstrap_trainfold_like = fte_subaverage(cfg, trials_trainfold_like);
     bootstrap_trainfold_dislike = fte_subaverage(cfg, trials_trainfold_dislike);
     

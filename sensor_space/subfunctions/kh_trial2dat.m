@@ -7,6 +7,12 @@ if 1 == size(trials,1)
         data(kk,:,:) = trials{kk}; 
     end
     
+elseif 1 ~= size(trials,1) && 2==ndims(trials)
+    for kk = 1:size(trials,1)
+        data{kk} = trials(kk,:)'; 
+    end
+    
+    
 else
     for kk = 1:size(trials,1)
         data{kk} = squeeze(trials(kk,:,:)); 

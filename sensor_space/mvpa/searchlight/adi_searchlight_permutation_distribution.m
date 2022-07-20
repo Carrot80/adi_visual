@@ -1,15 +1,15 @@
-function [] = adi_leave_out_exemplar_singlsubj(mainpath, subjectdir, filename, balldesign, comp, neighbours)
+function [] = adi_leave_out_exemplar_singlsubj(mainpath, subjectdir, filename, balldesign, time_interval, neighbours)
 
 
-for ii = 5:length(subjectdir)
+for ii = 6:length(subjectdir)
     
     
     if ~exist([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realignment_per_subject\'], 'dir')
         mkdir(([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realignment_per_subject\']))
     end
-    if 2 == exist([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realignment_per_subject\session.mat'], 'file')
+    if 2 == exist([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\session_fsample_orig.mat'], 'file')
         
-        load ([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realignment_per_subject\session.mat'])
+        load ([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\session_fsample_orig.mat'])
         
     else
     
@@ -104,12 +104,17 @@ for ii = 5:length(subjectdir)
     end
   
     %% MVPA  
-    
+    cfg = [];
+    cfg.avgovertime = 'yes';
+    cfg.latency = [time_interval(1) time_interval(2)];
+    session_seltime = ft_selectdata(cfg, session);
+    session_seltime.response_label = session.response_label;
+
 
 
 %         if ~exist([mainpath subjectdir(ii).name filesep filename  '_' num2str(comp(pp, 1)) '_' num2str(comp(pp, 2)) '_ms_lda.fig'], 'file')
 
-    [perf_perm] = mvpa_leave_out_balldesign(session, balldesign, [], neighbours);
+    [perf_perm] = mvpa_leave_out_balldesign(session_seltime, balldesign, time_interval, neighbours);
 
     if ~exist([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\searchlight\realigned_data_per_subject\'], 'dir')
         mkdir([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\searchlight\realigned_data_per_subject\'])
@@ -131,7 +136,7 @@ for ii = 5:length(subjectdir)
 %    end
 
 %             save([mainpath subjectdir(ii).name filesep 'permutation_distribution_comp_0.03_steps_0.02_0.15.mat'], 'perf')
-    save([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\searchlight\realigned_data_per_subject\permutation_distribution_comp_0.07_0.1.mat'], 'perf_perm')
+    save([mainpath subjectdir(ii).name filesep 'MEG_analysis\noisereduced\1_95Hz\mvpa\realigned_data_per_subject\searchlight\permutation_distribution_searchlight_0.03_0.15ms_1xtrainfold.mat'], 'perf_perm')
 %         end
 
 
@@ -145,7 +150,7 @@ end
 
 end
 
-function [perf_perm] = mvpa_leave_out_balldesign(session, balldesign, comp, neighbours)
+function [perf_perm] = mvpa_leave_out_balldesign(session, balldesign, time_interval, neighbours)
 
 %% Get default hyperparameters for the logreg and lda classifier
 param_logreg = mv_get_hyperparameter('logreg');
@@ -167,7 +172,7 @@ data_trials = kh_trial2dat(session.trial);
 %%
 
 for kk = 1:length(CV)
-    
+    disp(['creating null distribution for balldesign ' balldesign{kk}])
     test_fold = data_trials(CV(kk).testset,:,:);
     clabel_test_fold = session.labels(CV(kk).testset);
     % hier überprüfen, ob testset eindeutig einer condition zugeordnet ist:
@@ -225,7 +230,7 @@ for kk = 1:length(CV)
     cfg = [];
     cfg.mode = 'bootstrap';
     cfg.averages = 4;
-    cfg.repetitions = max_numel_trials*2;
+    cfg.repetitions = max_numel_trials;
     bootstrap_trainfold_like = fte_subaverage(cfg, trials_trainfold_like);
     bootstrap_trainfold_dislike = fte_subaverage(cfg, trials_trainfold_dislike);
     
@@ -264,14 +269,12 @@ for kk = 1:length(CV)
 %% Zeitintervalle verkleinern:
 
 % time = 0.03:0.04:0.15;
-time=[0.03 0.15]; % Besprch Stefan 
+% time=[0.03 0.15]; % Besprch Stefan 
 
-for ss = 1:numel(time)-1
+X_train = data_bootstrap_trainfold;
+X_test = test_fold;
 
-time_idx = find(session.time{1} >= time(ss)  &  session.time{1} <= time(ss+1));    
-X_train = mean(data_bootstrap_trainfold(:,:,time_idx),3);
-X_test = mean(test_fold(:,:,time_idx),3);
-
+ 
  %% LDA - Loop across features
 for ff = 1:length(session.label)
     
@@ -358,71 +361,68 @@ for ff = 1:length(session.label)
         clabel_train_fold_rand(pp,:) = clabel_train_fold(randperm(length(clabel_train_fold)));
     end
 
-    disp(['creating null distribution for balldesign ' balldesign{kk}])
+
 
     %     auc = nan(size_random_dataset, size(session.time{1},2));
-    confusion_percentage = cell(size_random_dataset, size(session.time{1},2));
-    confusion = cell(size_random_dataset, size(session.time{1},2));
-    f1score = cell(size_random_dataset, size(session.time{1},2));
+%     confusion_percentage = cell(size_random_dataset, size(session.time{1},2));
+%     confusion = cell(size_random_dataset, size(session.time{1},2));
+%     f1score = cell(size_random_dataset, size(session.time{1},2));
 
     
-    data_bootstrap_trainfold_tt = mean(data_bootstrap_trainfold(:,:,time_idx),3);
-    test_fold_tt = mean(test_fold(:,:,time_idx),3);
-%         parfor pp = 1:size(clabel_train_fold_rand,1)
+     
 %   lda:
     parfor pp = 1:size(clabel_train_fold_rand,1)
 %     for pp = 1:size(clabel_train_fold_rand,1)
-        cf_perm_lda = train_lda(param_lda, data_bootstrap_trainfold_tt, clabel_train_fold_rand(pp,:));
-        [predlabel_perm_lda, dval_perm_lda] = test_lda(cf_perm_lda, test_fold_tt); 
+        cf_perm_lda = train_lda(param_lda, data_bootstrap_trainfold, clabel_train_fold_rand(pp,:));
+        [predlabel_perm_lda, dval_perm_lda] = test_lda(cf_perm_lda, test_fold); 
 
         % Calculate AUC and Accuracy and other performance measures:
-        accuracy_lda(pp, ss) = mv_calculate_performance('acc', 'dval', dval_perm_lda, clabel_test_fold);
+        accuracy_lda(pp) = mv_calculate_performance('acc', 'dval', dval_perm_lda, clabel_test_fold);
 
     end
     
 %     perf_perm.(config.balldesign{kk}).auc = auc;
-    perf_perm.lda.(balldesign{kk})(ss).accuracy(:,ff) = accuracy_lda;    
-    perf_perm.lda.(balldesign{kk})(ss).number_of_trials.testset = numel(clabel_test_fold);  
-    perf_perm.lda.(balldesign{kk})(ss).number_of_trials.trainingsset = numel(clabel_train_fold);
-    perf_perm.lda.(balldesign{kk})(ss).time = [num2str(time(ss)) '_' num2str(time(ss+1))];
+    perf_perm.lda.(balldesign{kk}).accuracy(:,ff) = accuracy_lda;    
+    perf_perm.lda.(balldesign{kk}).number_of_trials.testset = numel(clabel_test_fold);  
+    perf_perm.lda.(balldesign{kk}).number_of_trials.trainingsset = numel(clabel_train_fold);
+    perf_perm.lda.(balldesign{kk}).time_interval = [num2str(time_interval(1)) '_' num2str(time_interval(2))];
     
     %% svm:
     parfor pp = 1:size(clabel_train_fold_rand,1)
-%     for pp = 1:size(clabel_train_fold_rand,1)
-        cf_perm_svm = train_lda(param_lda, data_bootstrap_trainfold_tt, clabel_train_fold_rand(pp,:));
-        [predlabel_perm_svm, dval_perm_svm] = test_lda(cf_perm_svm, test_fold_tt); 
+        cf_perm_svm = train_svm(param_svm, data_bootstrap_trainfold, clabel_train_fold_rand(pp,:));
+        [predlabel_perm_svm, dval_perm_svm] = test_svm(cf_perm_svm, test_fold); 
 
         % Calculate AUC and Accuracy and other performance measures:
-        accuracy_svm(pp, ss) = mv_calculate_performance('acc', 'dval', dval_perm_svm, clabel_test_fold);
+        accuracy_svm(pp) = mv_calculate_performance('acc', 'dval', dval_perm_svm, clabel_test_fold);
 
     end
  
 
-    perf_perm.svm.(balldesign{kk})(ss).accuracy(:,ff) = accuracy_svm;    
-    perf_perm.svm.(balldesign{kk})(ss).number_of_trials.testset = numel(clabel_test_fold);  
-    perf_perm.svm.(balldesign{kk})(ss).number_of_trials.trainingsset = numel(clabel_train_fold);
-    perf_perm.svm.(balldesign{kk})(ss).time = [num2str(time(ss)) '_' num2str(time(ss+1))];
+    perf_perm.svm.(balldesign{kk}).accuracy(:,ff) = accuracy_svm;    
+    perf_perm.svm.(balldesign{kk}).number_of_trials.testset = numel(clabel_test_fold);  
+    perf_perm.svm.(balldesign{kk}).number_of_trials.trainingsset = numel(clabel_train_fold);
+    perf_perm.svm.(balldesign{kk}).time_interval = [num2str(time_interval(1)) '_' num2str(time_interval(2))];
     
     
    %% logreg:
     parfor pp = 1:size(clabel_train_fold_rand,1)
 %     for pp = 1:size(clabel_train_fold_rand,1)
-        cf_perm_logreg = train_lda(param_lda, data_bootstrap_trainfold_tt, clabel_train_fold_rand(pp,:));
-        [predlabel_perm_logreg, dval_perm_logreg] = test_logreg(cf_perm_logreg, test_fold_tt); 
+        cf_perm_logreg = train_logreg(param_logreg, data_bootstrap_trainfold, clabel_train_fold_rand(pp,:));
+        [predlabel_perm_logreg, dval_perm_logreg] = test_logreg(cf_perm_logreg, test_fold); 
 
         % Calculate AUC and Accuracy and other performance measures:
-        accuracy_logreg(pp, ss) = mv_calculate_performance('acc', 'dval', dval_perm_logreg, clabel_test_fold);
+        accuracy_logreg(pp) = mv_calculate_performance('acc', 'dval', dval_perm_logreg, clabel_test_fold);
 
     end
     
 %     perf_perm.(config.balldesign{kk}).auc = auc;
-    perf_perm.logreg.(balldesign{kk})(ss).accuracy(:,ff) = accuracy_logreg;    
-    perf_perm.logreg.(balldesign{kk})(ss).number_of_trials.testset = numel(clabel_test_fold);  
-    perf_perm.logreg.(balldesign{kk})(ss).number_of_trials.trainingsset = numel(clabel_train_fold);
-    perf_perm.logreg.(balldesign{kk})(ss).time = [num2str(time(ss)) '_' num2str(time(ss+1))];
+    perf_perm.logreg.(balldesign{kk}).accuracy(:,ff) = accuracy_logreg;    
+    perf_perm.logreg.(balldesign{kk}).number_of_trials.testset = numel(clabel_test_fold);  
+    perf_perm.logreg.(balldesign{kk}).number_of_trials.trainingsset = numel(clabel_train_fold);
+    perf_perm.logreg.(balldesign{kk}).time_interval = [num2str(time_interval(1)) '_' num2str(time_interval(2))];
 end
 
-end
+
     clear Xfeat_test Xfeat_train clabel_train_fold clabel_test_fold neighb_index nb
     
 end
